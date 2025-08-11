@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cardápio Digital</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./style.css">
+</head>
+<body class="bg-gray-50">
+    <div id="app">
+        <!-- Loading Screen -->
+        <div id="loading" class="min-h-screen bg-gray-50 flex items-center justify-center">
+            <div class="text-center">
+                <div class="loading-spinner mx-auto mb-4"></div>
+                <h2 class="text-xl font-semibold text-gray-700">Carregando cardápio...</h2>
+                <p class="text-gray-500 mt-2">Aguarde um momento</p>
+            </div>
+        </div>
+
+        <!-- Cardápio Principal -->
+        <div id="cardapio" class="hidden min-h-screen bg-gray-50">
+            <!-- Header Principal -->
+            <header id="headerPrincipal" class="bg-gradient-to-r from-purple-500 to-blue-500 text-white shadow-lg">
+                <div class="max-w-4xl mx-auto p-6">
+                    <div class="flex items-center gap-4 mb-4">
+                        <!-- Logo do Estabelecimento -->
+                        <div id="logoContainer" class="flex-shrink-0">
+                            <div id="logoPlaceholder" class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                <span class="text-2xl">🏪</span>
+                            </div>
+                            <img 
+                                id="logoEstabelecimento" 
+                                alt="Logo" 
+                                class="w-16 h-16 object-contain bg-white bg-opacity-20 rounded-full p-1 hidden"
+                                onload="document.getElementById('logoPlaceholder').style.display='none'; this.classList.remove('hidden');"
+                                onerror="this.style.display='none'; document.getElementById('logoPlaceholder').style.display='flex';"
+                            />
+                        </div>
+                        
+                        <!-- Informações do Estabelecimento -->
+                        <div class="flex-1">
+                            <h1 id="nomeEstabelecimento" class="text-3xl font-bold mb-2">Carregando...</h1>
+                            <p id="descricaoEstabelecimento" class="text-puple-500"></p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-4 text-sm">
+                        <div class="flex items-center gap-2">
+                            <span>📞</span>
+                            <span id="telefoneEstabelecimento"></span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span>📍</span>
+                            <span id="enderecoEstabelecimento"></span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span>🕒</span>
+                            <span id="horarioEstabelecimento"></span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Header Compacto Fixo (Mobile) -->
+            <div id="headerCompacto" class="header-compacto fixed top-0 left-0 right-0 z-20 bg-gradient-to-r from-purple-500 to-red-500 text-white shadow-lg md:hidden">
+                <div class="flex items-center justify-between px-4 py-3">
+                    <div class="flex items-center gap-3">
+                        <!-- Logo Compacto -->
+                        <div id="logoCompactoContainer" class="flex-shrink-0">
+                            <div id="logoCompactoPlaceholder" class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                                <span class="text-sm">🏪</span>
+                            </div>
+                            <img 
+                                id="logoCompacto" 
+                                alt="Logo" 
+                                class="w-8 h-8 object-contain bg-white bg-opacity-20 rounded-full p-0.5 hidden"
+                            />
+                        </div>
+                        
+                        <!-- Nome do Estabelecimento -->
+                        <div>
+                            <h2 id="nomeCompacto" class="font-bold text-sm leading-tight">Carregando...</h2>
+                        </div>
+                    </div>
+                    
+                    <!-- Status de Funcionamento -->
+                    <div id="statusCompacto" class="text-xs font-medium bg-white bg-opacity-20 px-2 py-1 rounded-full">
+                        🟢 Aberto
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carrinho Flutuante -->
+            <div id="carrinhoFlutuante" class="fixed bottom-6 right-6 z-30 hidden">
+                <button 
+                    onclick="abrirModalCarrinho()" 
+                    class="carrinho-flutuante bg-gradient-to-r from-green-500 to-green-600 text-white rounded-full p-4 shadow-lg hover:shadow-xl relative"
+                >
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.1 5.5M7 13v8a2 2 0 002 2h4a2 2 0 002-2v-8m-8 0V9a2 2 0 012-2h4a2 2 0 012 2v4"></path>
+                    </svg>
+                    <!-- Badge com quantidade -->
+                    <div id="badgeQuantidade" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
+                        0
+                    </div>
+                    <!-- Badge com total -->
+                    <div id="badgeTotal" class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-white text-green-600 text-xs px-2 py-1 rounded-full font-bold whitespace-nowrap shadow-md">
+                        R$ 0,00
+                    </div>
+                </button>
+            </div>
+
+            <!-- Modal do Carrinho -->
+            <div id="modalCarrinho" class="fixed inset-0 z-40 hidden">
+                <!-- Overlay -->
+                <div class="modal-overlay absolute inset-0 bg-black bg-opacity-50" onclick="fecharModalCarrinho()"></div>
+                
+                <!-- Conteúdo do Modal -->
+                <div class="modal-content absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-2xl max-h-[80vh] overflow-hidden">
+                    <!-- Header do Modal -->
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-bold flex items-center gap-2">
+                                🛒 Seu Pedido
+                                <span id="quantidadeItensModal" class="bg-white bg-opacity-20 px-2 py-1 rounded-full text-sm">0 itens</span>
+                            </h3>
+                            <button onclick="fecharModalCarrinho()" class="text-white hover:text-gray-200 text-2xl">
+                                ×
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Lista de Itens -->
+                    <div class="overflow-y-auto max-h-96 p-4">
+                        <div id="itensCarrinhoModal" class="space-y-3">
+                            <!-- Itens serão inseridos aqui -->
+                        </div>
+                        
+                        <!-- Estado vazio -->
+                        <div id="carrinhoVazio" class="text-center py-8 text-gray-500 hidden">
+                            <div class="text-4xl mb-2">🛒</div>
+                            <p>Seu carrinho está vazio</p>
+                            <p class="text-sm mt-1">Adicione alguns itens deliciosos!</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Footer do Modal -->
+                    <div id="footerModal" class="border-t border-gray-200 p-4 bg-gray-50">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-lg font-bold text-gray-800">Total:</span>
+                            <span id="totalCarrinhoModal" class="text-2xl font-bold text-green-600">R$ 0,00</span>
+                        </div>
+                        <div class="space-y-3">
+                            <!-- Botões principais -->
+                            <div class="flex gap-3">
+                                <button 
+                                    onclick="limparCarrinho()" 
+                                    class="flex-1 bg-red-500 text-white py-3 rounded-lg font-medium hover:bg-red-600 transition-colors"
+                                >
+                                    🗑️ Limpar
+                                </button>
+                                <button 
+                                    onclick="abrirModalEntrega()" 
+                                    class="flex-2 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-6 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all"
+                                >
+                                    📱 Finalizar Pedido
+                                </button>
+                            </div>
+                            
+                            <!-- Botão pedido rápido -->
+                            <div class="text-center">
+                                <button 
+                                    onclick="enviarPedidoSimples()" 
+                                    class="text-blue-600 hover:text-blue-800 text-sm underline"
+                                >
+                                    ⚡ Enviar pedido rápido (sem dados)
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Entrega -->
+            <div id="modalEntrega" class="fixed inset-0 z-50 hidden">
+                <!-- Overlay -->
+                <div class="modal-overlay absolute inset-0 bg-black bg-opacity-50" onclick="fecharModalEntrega()"></div>
+                
+                <!-- Conteúdo do Modal -->
+                <div class="modal-content absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+                    <!-- Header -->
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-t-2xl">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-bold flex items-center gap-2">
+                                🚚 Dados para Entrega
+                            </h3>
+                            <button onclick="fecharModalEntrega()" class="text-white hover:text-gray-200 text-2xl">
+                                ×
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Conteúdo -->
+                    <div class="p-6">
+                        <!-- Opção de Tipo de Pedido -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-bold text-gray-700 mb-3">🏠 Tipo do Pedido</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button 
+                                    id="btnEntrega" 
+                                    onclick="selecionarTipoPedido('entrega')" 
+                                    class="tipo-pedido-btn bg-blue-50 border-2 border-blue-300 p-3 rounded-lg text-center transition hover:bg-blue-100"
+                                >
+                                    <div class="text-2xl mb-1">🚚</div>
+                                    <div class="font-bold text-blue-800">Entrega</div>
+                                    <div class="text-xs text-blue-600">Receber em casa</div>
+                                </button>
+                                <button 
+                                    id="btnRetirada" 
+                                    onclick="selecionarTipoPedido('retirada')" 
+                                    class="tipo-pedido-btn bg-gray-100 border-2 border-transparent p-3 rounded-lg text-center transition hover:bg-gray-200"
+                                >
+                                    <div class="text-2xl mb-1">🏪</div>
+                                    <div class="font-bold text-gray-700">Retirada</div>
+                                    <div class="text-xs text-gray-600">Buscar no local</div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Dados do Cliente -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">👤 Nome Completo</label>
+                            <input 
+                                type="text" 
+                                id="nomeCliente" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Seu nome completo"
+                                required
+                            >
+                        </div>
+
+                        <div class="mb-6">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">📱 WhatsApp/Telefone</label>
+                            <input 
+                                type="tel" 
+                                id="telefoneCliente" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="(11) 99999-9999"
+                                required
+                            >
+                        </div>
+
+                        <!-- Endereço de Entrega -->
+                        <div id="enderecoSection" class="mb-6">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">📍 Endereço de Entrega</label>
+                            
+                            <!-- Busca por CEP -->
+                            <div class="mb-3">
+                                <div class="flex gap-2">
+                                    <input 
+                                        type="text" 
+                                        id="cepCliente" 
+                                        class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="00000-000"
+                                        maxlength="9"
+                                    >
+                                    <button 
+                                        onclick="buscarCEP()" 
+                                        class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition text-sm font-medium"
+                                    >
+                                        🔍 Buscar
+                                    </button>
+                                </div>
+                                <p class="text-xs text-gray-500 mt-1">Digite o CEP para preenchimento automático</p>
+                            </div>
+
+                            <!-- Campos de Endereço -->
+                            <div class="grid grid-cols-2 gap-3 mb-3">
+                                <div>
+                                    <input 
+                                        type="text" 
+                                        id="ruaCliente" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Rua/Avenida"
+                                        required
+                                    >
+                                </div>
+                                <div>
+                                    <input 
+                                        type="text" 
+                                        id="numeroCliente" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Número"
+                                        required
+                                    >
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3 mb-3">
+                                <div>
+                                    <input 
+                                        type="text" 
+                                        id="bairroCliente" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Bairro"
+                                        required
+                                    >
+                                </div>
+                                <div>
+                                    <input 
+                                        type="text" 
+                                        id="cidadeCliente" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Cidade"
+                                        required
+                                    >
+                                </div>
+                            </div>
+
+                            <div>
+                                <input 
+                                    type="text" 
+                                    id="complementoCliente" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Complemento (opcional): Apt, Casa, Bloco..."
+                                >
+                            </div>
+
+                            <div class="mt-3">
+                                <textarea 
+                                    id="referenciaCliente" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    placeholder="Ponto de referência (opcional): Próximo ao mercado, casa azul..."
+                                    rows="2"
+                                ></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Forma de Pagamento -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-bold text-gray-700 mb-3">💳 Forma de Pagamento</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button 
+                                    onclick="selecionarPagamento('dinheiro')" 
+                                    class="pagamento-btn bg-gray-100 border-2 border-transparent p-3 rounded-lg text-center transition hover:bg-green-50 hover:border-green-300"
+                                >
+                                    <div class="text-xl mb-1">💵</div>
+                                    <div class="text-xs font-bold">Dinheiro</div>
+                                </button>
+                                <button 
+                                    onclick="selecionarPagamento('cartao')" 
+                                    class="pagamento-btn bg-gray-100 border-2 border-transparent p-3 rounded-lg text-center transition hover:bg-blue-50 hover:border-blue-300"
+                                >
+                                    <div class="text-xl mb-1">💳</div>
+                                    <div class="text-xs font-bold">Cartão</div>
+                                </button>
+                                <button 
+                                    onclick="selecionarPagamento('pix')" 
+                                    class="pagamento-btn bg-gray-100 border-2 border-transparent p-3 rounded-lg text-center transition hover:bg-purple-50 hover:border-purple-300"
+                                >
+                                    <div class="text-xl mb-1">📱</div>
+                                    <div class="text-xs font-bold">PIX</div>
+                                </button>
+                            </div>
+                            
+                            <!-- Campo adicional para dinheiro -->
+                            <div id="dinheiroTroco" class="mt-3 hidden">
+                                <input 
+                                    type="text" 
+                                    id="trocoCliente" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                    placeholder="Precisa de troco para quanto? (opcional)"
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Observações -->
+                        <div class="mb-6">
+                            <label class="block text-sm font-bold text-gray-700 mb-2">📝 Observações</label>
+                            <textarea 
+                                id="observacoesCliente" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Alguma observação especial sobre o pedido? (opcional)"
+                                rows="3"
+                            ></textarea>
+                        </div>
+
+                        <!-- Resumo do Pedido -->
+                        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                            <h4 class="font-bold text-gray-800 mb-2">📋 Resumo do Pedido</h4>
+                            <div id="resumoPedidoEntrega" class="text-sm text-gray-700 space-y-1">
+                                <!-- Será preenchido dinamicamente -->
+                            </div>
+                            <div class="border-t border-gray-300 mt-3 pt-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-bold">Total:</span>
+                                    <span id="totalPedidoEntrega" class="text-xl font-bold text-green-600">R$ 0,00</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botões -->
+                        <div class="flex gap-3">
+                            <button 
+                                onclick="fecharModalEntrega()" 
+                                class="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-400 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                onclick="enviarPedidoEntrega()" 
+                                class="flex-2 bg-gradient-to-r from-green-500 to-green-600 text-white py-3 px-6 rounded-lg font-medium hover:from-green-600 hover:to-green-700 transition-all"
+                            >
+                                🚚 Confirmar Pedido
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Conteúdo Principal -->
+            <main>
+                <div class="max-w-4xl mx-auto p-4">
+
+                    <!-- Navegação de categorias fixa -->
+                    <div id="categoriasNavContainer" class="sticky bg-gray-50 z-10 pb-4 border-b border-gray-200" 
+                         style="top: 0;">
+                        <div id="categoriasNav" class="flex overflow-x-auto gap-2 pb-2"></div>
+                    </div>
+                    
+                    <!-- Conteúdo rolável -->
+                    <div class="space-y-4 pt-6">
+                        <h2 id="tituloCategoria" class="text-2xl font-bold text-gray-800 mb-4"></h2>
+                        <div id="listaItens" class="space-y-4"></div>
+                    </div>
+                    <div class="mt-12 text-center text-gray-500 text-sm">
+                        <p>❤️☕ Feito com carinho</p>
+
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="./script.js"></script>
+</body>
+</html>
