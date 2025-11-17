@@ -1,4 +1,4 @@
-        .item-card {
+.item-card {
             transition: transform 0.2s ease;
         }
 
@@ -10,10 +10,12 @@
             transition: all 0.3s ease;
         }
 
+        /* 🎯 MUDANÇA AQUI: Cor dos botões de categoria ativos para #2A5BA3 */
         .categoria-btn.ativa {
-            background: #713E51;
+            background: #2A5BA3; /* NOVO: Cor azul solicitada */
             color: white;
-            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+            /* NOVO: Box-shadow ajustado para o novo tom azul */
+            box-shadow: 0 4px 12px rgba(42, 91, 163, 0.5); 
         }
 
         .loading-spinner {

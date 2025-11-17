@@ -44,7 +44,7 @@ function converterUrlParaImagemDireta(url) {
         let fileId = null;
 
         // Formato 1: /file/d/ID/view
-        let match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+        let match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)\//);
         if (match) {
             fileId = match[1];
         }
@@ -239,10 +239,10 @@ function ocultarLoading() {
     document.getElementById('cardapio').classList.remove('hidden');
 }
 
-// Função para mostrar erro detalhado
+// Função para mostrar erro detalhado - MODIFICADO O FUNDO AQUI
 function mostrarErroDetalhado(mensagem) {
     document.body.innerHTML = `
-                <div class="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+                <div class="min-h-screen bg-[#3C85C2] flex items-center justify-center p-4"> 
                     <div class="text-center max-w-md">
                         <div class="text-6xl mb-4">❌</div>
                         <h2 class="text-2xl font-bold text-gray-800 mb-2">Erro ao carregar dados</h2>
@@ -401,7 +401,7 @@ function formatarPreco(valor) {
     }).format(valor);
 }
 
-// Função para renderizar categorias
+// FUNÇÃO renderizarCategorias() MODIFICADA: Remoção do "undefined"
 function renderizarCategorias() {
     const categoriasNav = document.getElementById('categoriasNav');
     if (!categoriasNav) return;
@@ -414,7 +414,11 @@ function renderizarCategorias() {
                 ? 'ativa'
                 : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
             }`;
-        botao.textContent = `${categoria.icone} ${categoria.nome}`;
+            
+        // MUDANÇA AQUI: Garante que o ícone só apareça se estiver definido e não vazio
+        const icone = categoria.icone && categoria.icone.trim() !== '' ? categoria.icone.trim() + ' ' : '';
+        
+        botao.textContent = `${icone}${categoria.nome}`;
         botao.onclick = () => {
             categoriaAtiva = parseInt(categoria.id);
             renderizarCategorias();
@@ -424,7 +428,7 @@ function renderizarCategorias() {
     });
 }
 
-// Função para renderizar itens
+// FUNÇÃO renderizarItens() MODIFICADA: Remoção da exibição do preço
 function renderizarItens() {
     const categoriaAtual = categoriasComItens.find(cat => cat.id == categoriaAtiva);
     const tituloCategoria = document.getElementById('tituloCategoria');
@@ -471,6 +475,7 @@ function renderizarItens() {
         }
 
         const itemDiv = document.createElement('div');
+        // MODIFICADO: Removidos 'w-64' e 'flex-shrink-0'. Agora usa a largura da coluna do grid.
         itemDiv.className = `item-card bg-white rounded-lg shadow-md overflow-hidden ${!itemDisponivel ? 'opacity-60' : ''}`;
 
         // 🔧 GERAR HTML DA IMAGEM COM SISTEMA DE FALLBACK
@@ -483,12 +488,10 @@ function renderizarItens() {
                 ).join(' ');
 
                 htmlImagem = `
-                        <div class="md:w-1/3">
-                            <img
+                        <div class="h-64 bg-gray-50"> <img
                                 src="${imagemConfig.formatos[0]}"
                                 alt="${item.nome}"
-                                class="w-full h-48 md:h-48 object-contain bg-gray-50 rounded-lg"
-                                onload=""
+                                class="w-full h-full object-contain p-2" onload=""
                                 onerror="${fallbackUrls}"
                                 loading="lazy"
                             />
@@ -496,12 +499,10 @@ function renderizarItens() {
             } else {
                 // URL simples (Dropbox, URLs externas)
                 htmlImagem = `
-                        <div class="md:w-1/3">
-                            <img
+                        <div class="h-64 bg-gray-50"> <img
                                 src="${imagemConfig.url}"
                                 alt="${item.nome}"
-                                class="w-full h-48 md:h-48 object-contain bg-gray-50"
-                                onload=""
+                                class="w-full h-full object-contain p-2" onload=""
                                 onerror="mostrarErroImagem(this);"
                                 loading="lazy"
                             />
@@ -509,8 +510,7 @@ function renderizarItens() {
             }
         } else {
             htmlImagem = `
-                    <div class="md:w-1/3 bg-gray-100 flex items-center justify-center rounded-lg">
-                        <div class="text-center p-4">
+                    <div class="h-64 bg-gray-100 flex items-center justify-center"> <div class="text-center p-4">
                             <div class="text-4xl mb-2">🍽️</div>
                             <p class="text-gray-500 text-sm">Sem imagem</p>
                         </div>
@@ -518,33 +518,29 @@ function renderizarItens() {
         }
 
         itemDiv.innerHTML = `
-                    <div class="flex flex-col md:flex-row">
-                        ${htmlImagem}
-                        <div class="${imagemConfig ? 'flex-1' : 'w-full'} p-4">
-                            <div class="flex justify-between items-start mb-2">
-                                <h3 class="text-lg font-semibold text-gray-800">${item.nome}</h3>
-                                ${!itemDisponivel ? `
-                                    <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
-                                        Indisponível
-                                    </span>
-                                ` : ''}
-                            </div>
-                            <p class="text-gray-600 text-sm mb-3">${item.descricao}</p>
-                            <div class="flex justify-between items-center">
-                                <span class="text-2xl font-bold text-purple-600">
-                                    ${precoFormatado}
-                                </span>
-                                <button
-                                    id="btn-${item.id}"
-                                    class="btn-pedido px-4 py-2 rounded-lg font-medium transition-all ${itemDisponivel
-                ? 'bg-purple-500 text-white hover:bg-purple-600'
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-            }"
-                                    ${!itemDisponivel ? 'disabled' : ''}
-                                    onclick="${itemDisponivel ? `adicionarAoCarrinhoComVerificacao('${item.id}', '${item.nome.replace(/'/g, "\\'")}', ${preco})` : ''}"
-                                >
-                                    ${itemDisponivel ? '🛒 Adicionar' : 'Indisponível'}
-                                </button>
+                    ${htmlImagem}
+                    <div class="p-4 flex flex-col justify-between h-[calc(100%-16rem)]"> <div class="flex-grow">
+                            <h3 class="text-lg font-bold text-gray-800 truncate mb-1" title="${item.nome}">${item.nome}</h3>
+                            <p class="text-sm text-gray-500 mb-3">${item.descricao || ''}</p>
+                        </div>
+                        <div class="mt-auto">
+                            <div class="flex items-center justify-end"> 
+                                ${itemDisponivel ?
+                `<button 
+                                        onclick="adicionarAoCarrinho(${item.id}, '${item.nome}', ${preco})" 
+                                        class="btn-pedido bg-purple-500 text-white p-2 rounded-full hover:bg-purple-600 transition-colors"
+                                    >
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                                        </svg>
+                                    </button>`
+                :
+                `<button disabled class="bg-gray-300 text-gray-500 p-2 rounded-full cursor-not-allowed">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                        </svg>
+                                    </button>`
+            }
                             </div>
                         </div>
                     </div>
@@ -552,145 +548,71 @@ function renderizarItens() {
 
         listaItens.appendChild(itemDiv);
     });
-}
 
-// Função para mostrar aviso de estabelecimento fechado
-function mostrarAvisoFechado(motivo) {
-    // Verificar se já existe aviso
-    let avisoExistente = document.getElementById('avisoFechado');
-    if (avisoExistente) {
-        avisoExistente.remove();
-    }
-
-    // Criar novo aviso
-    const aviso = document.createElement('div');
-    aviso.id = 'avisoFechado';
-    aviso.className = 'bg-red-50 border border-red-200 rounded-lg p-4 mb-6';
-    aviso.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <div class="text-2xl">🔴</div>
-                    <div>
-                        <h3 class="font-bold text-red-800 mb-1">Estabelecimento Fechado</h3>
-                        <p class="text-red-700 text-sm">${motivo}</p>
-                        <p class="text-red-600 text-xs mt-1">Não é possível fazer pedidos no momento</p>
-                    </div>
-                </div>
-            `;
-
-    // Inserir após o header
-    const main = document.querySelector('main .max-w-4xl');
-    main.insertBefore(aviso, main.firstChild);
-
-    // Desabilitar todos os botões de adicionar
-    desabilitarBotoesAdicionar();
-}
-
-// Função para desabilitar botões de adicionar ao carrinho
-function desabilitarBotoesAdicionar() {
-    const botoes = document.querySelectorAll('.btn-pedido:not([disabled])');
-    botoes.forEach(botao => {
-        if (!botao.disabled) {
-            botao.disabled = true;
-            botao.classList.remove('bg-purple-500', 'hover:bg-puple-600');
-            botao.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
-            botao.textContent = '🔴 Fechado';
-        }
-    });
-}
-
-// Função para habilitar botões de adicionar ao carrinho
-function habilitarBotoesAdicionar() {
-    const botoes = document.querySelectorAll('.btn-pedido[disabled]');
-    botoes.forEach(botao => {
-        const itemId = botao.id.replace('btn-', '');
-        const item = itens.find(i => i.id === itemId);
-
-        if (item && (item.disponivel === 'TRUE' || item.disponivel === true || item.disponivel === 'true')) {
-            botao.disabled = false;
-            botao.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
-            botao.classList.add('bg-purple-500', 'text-white', 'hover:bg-purple-600');
-            botao.textContent = '🛒 Adicionar';
-        }
-    });
-}
-
-// Funções do carrinho
-function adicionarAoCarrinhoComVerificacao(id, nome, preco) {
+    // Reabilitar botões se estiver aberto e os botões estiverem desabilitados
     const statusFuncionamento = verificarHorarioFuncionamento();
-
-    if (!statusFuncionamento.aberto) {
-        mostrarFeedback(`❌ ${statusFuncionamento.motivo}`, 'error');
-        return;
+    if (statusFuncionamento.aberto) {
+        habilitarBotoesAdicionar();
     }
-
-    adicionarAoCarrinho(id, nome, preco);
 }
 
+// Função para mostrar erro de carregamento de imagem
+function mostrarErroImagem(imgElement) {
+    imgElement.onerror = null; // Evita loop infinito de erro
+    imgElement.src = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="w-full h-full text-gray-500"><path d="M4 16l4.586-4.586a2 2 0 012.828 0L15 14l5-5"/></svg>';
+    imgElement.classList.add('object-contain', 'p-4');
+    imgElement.classList.remove('object-cover', 'p-0');
+}
+
+// Lógica de Carrinho (adição, remoção, cálculo)
 function adicionarAoCarrinho(id, nome, preco) {
-    // Verificar se o item já está no carrinho
     const itemExistente = carrinho.find(item => item.id === id);
 
     if (itemExistente) {
         itemExistente.quantidade += 1;
     } else {
-        carrinho.push({
-            id: id,
-            nome: nome,
-            preco: preco,
-            quantidade: 1
-        });
+        carrinho.push({ id, nome, preco, quantidade: 1 });
     }
 
-    atualizarCarrinho();
-
-    // Animação do botão que foi clicado
-    const botao = document.getElementById(`btn-${id}`);
-    if (botao) {
-        botao.classList.add('item-adicionado');
-        setTimeout(() => {
-            botao.classList.remove('item-adicionado');
-        }, 600);
-    }
-
-    // Mostrar feedback visual
-    mostrarFeedback(`${nome} adicionado ao carrinho!`, 'success');
+    renderizarCarrinho();
+    mostrarFeedback(`"${nome}" adicionado ao carrinho!`, 'success');
 }
 
 function removerDoCarrinho(id) {
-    carrinho = carrinho.filter(item => item.id !== id);
-    atualizarCarrinho();
+    const index = carrinho.findIndex(item => item.id === id);
+
+    if (index !== -1) {
+        carrinho.splice(index, 1);
+        renderizarCarrinho();
+        mostrarFeedback('Item removido do carrinho.', 'error');
+    }
 }
 
-function alterarQuantidade(id, novaQuantidade) {
-    if (novaQuantidade <= 0) {
-        removerDoCarrinho(id);
-        return;
-    }
+function diminuirQuantidade(id) {
+    const itemExistente = carrinho.find(item => item.id === id);
 
-    const item = carrinho.find(item => item.id === id);
-    if (item) {
-        item.quantidade = novaQuantidade;
-        atualizarCarrinho();
+    if (itemExistente) {
+        itemExistente.quantidade -= 1;
+        if (itemExistente.quantidade <= 0) {
+            removerDoCarrinho(id);
+        } else {
+            renderizarCarrinho();
+        }
     }
 }
 
 function limparCarrinho() {
     carrinho = [];
-    atualizarCarrinho();
+    renderizarCarrinho();
+    fecharModalCarrinho();
+    mostrarFeedback('Carrinho limpo!', 'error');
 }
 
-// Funções do modal do carrinho
-function abrirModalCarrinho() {
-    document.getElementById('modalCarrinho').classList.remove('hidden');
-    document.body.style.overflow = 'hidden'; // Previne scroll do body
+function calcularTotalCarrinho() {
+    return carrinho.reduce((total, item) => total + item.preco * item.quantidade, 0);
 }
 
-function fecharModalCarrinho() {
-    document.getElementById('modalCarrinho').classList.add('hidden');
-    document.body.style.overflow = 'auto'; // Restaura scroll do body
-}
-
-function atualizarCarrinho() {
+function renderizarCarrinho() {
     const carrinhoFlutuante = document.getElementById('carrinhoFlutuante');
     const badgeQuantidade = document.getElementById('badgeQuantidade');
     const badgeTotal = document.getElementById('badgeTotal');
@@ -703,7 +625,6 @@ function atualizarCarrinho() {
     if (carrinho.length === 0) {
         // Esconder carrinho flutuante
         carrinhoFlutuante.classList.add('hidden');
-
         // Mostrar estado vazio no modal
         carrinhoVazio.classList.remove('hidden');
         itensCarrinhoModal.classList.add('hidden');
@@ -720,7 +641,6 @@ function atualizarCarrinho() {
     // Calcular totais
     let totalItens = 0;
     let totalPreco = 0;
-
     carrinho.forEach(item => {
         totalItens += item.quantidade;
         totalPreco += item.preco * item.quantidade;
@@ -736,226 +656,119 @@ function atualizarCarrinho() {
 
     // Renderizar itens no modal
     itensCarrinhoModal.innerHTML = '';
-
     carrinho.forEach(item => {
         const subtotal = item.preco * item.quantidade;
-
         const itemDiv = document.createElement('div');
-        itemDiv.className = 'bg-white border border-gray-200 rounded-lg p-4 shadow-sm';
+        itemDiv.className = 'flex items-center gap-3 bg-gray-50 p-3 rounded-lg shadow-sm';
         itemDiv.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <!-- Info do item -->
-                        <div class="flex-1">
-                            <h4 class="font-medium text-gray-800">${item.nome}</h4>
-                            <div class="text-sm text-gray-600">
-                                ${formatarPreco(item.preco)} × ${item.quantidade}
-                            </div>
-                            <div class="text-lg font-bold text-green-600 mt-1">
-                                ${formatarPreco(subtotal)}
-                            </div>
-                        </div>
-                        
-                        <!-- Controles de quantidade -->
-                        <div class="flex items-center gap-2">
-                            <button 
-                                onclick="alterarQuantidade('${item.id}', ${item.quantidade - 1})" 
-                                class="w-8 h-8 bg-gray-200 text-gray-700 rounded-full text-lg hover:bg-gray-300 transition-colors flex items-center justify-center"
-                            >
-                                −
-                            </button>
-                            <span class="w-8 text-center font-bold text-lg">${item.quantidade}</span>
-                            <button 
-                                onclick="alterarQuantidade('${item.id}', ${item.quantidade + 1})" 
-                                class="w-8 h-8 bg-gray-200 text-gray-700 rounded-full text-lg hover:bg-gray-300 transition-colors flex items-center justify-center"
-                            >
-                                +
-                            </button>
-                        </div>
-                        
-                        <!-- Botão remover -->
-                        <button 
-                            onclick="removerDoCarrinho('${item.id}')" 
-                            class="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full transition-colors"
-                            title="Remover item"
-                        >
-                            🗑️
-                        </button>
-                    </div>
-                `;
-        itensCarrinhoModal.appendChild(itemDiv);
-    });
-}
-
-function enviarPedidoCompleto() {
-    // Função mantida para compatibilidade - redireciona para modal de entrega
-    abrirModalEntrega();
-}
-
-function enviarPedidoSimples() {
-    if (carrinho.length === 0) {
-        mostrarFeedback('Seu carrinho está vazio!', 'error');
-        return;
-    }
-
-    // Verificar horário de funcionamento antes de enviar
-    const statusFuncionamento = verificarHorarioFuncionamento();
-    if (!statusFuncionamento.aberto) {
-        mostrarFeedback(`❌ Não é possível enviar pedidos. ${statusFuncionamento.motivo}`, 'error');
-        return;
-    }
-
-    const telefone = estabelecimento.telefone.replace(/\D/g, '');
-
-    // Iniciar mensagem com informação da mesa (se disponível)
-    let mensagem = `Olá! Gostaria de fazer o seguinte pedido:\n\n`;
-    if (numeroMesa) {
-        mensagem = `🪑 *MESA ${numeroMesa}*\n\nOlá! Gostaria de fazer o seguinte pedido:\n\n`;
-    }
-
-    let total = 0;
-    carrinho.forEach(item => {
-        const subtotal = item.preco * item.quantidade;
-        total += subtotal;
-        mensagem += `• ${item.nome}\n`;
-        mensagem += `  Qtd: ${item.quantidade} × ${formatarPreco(item.preco)} = ${formatarPreco(subtotal)}\n\n`;
-    });
-
-    mensagem += `💰 TOTAL: ${formatarPreco(total)}\n\n`;
-
-    // Adicionar mesa no final também se disponível
-    if (numeroMesa) {
-        mensagem += `📍 Mesa: ${numeroMesa}\n\n`;
-    }
-
-    mensagem += `Obrigado!`;
-
-    const url = `https://wa.me/55${telefone}?text=${encodeURIComponent(mensagem)}`;
-    window.open(url, '_blank');
-
-    // Fechar modal e limpar carrinho após enviar
-    fecharModalCarrinho();
-    limparCarrinho();
-    mostrarFeedback('Pedido enviado com sucesso!', 'success');
-}
-
-function mostrarFeedback(mensagem, tipo = 'success') {
-    // Criar elemento de feedback
-    const feedback = document.createElement('div');
-    const corFundo = tipo === 'success' ? 'bg-green-500' :
-        tipo === 'error' ? 'bg-red-500' : 'bg-blue-500';
-
-    feedback.className = `fixed top-4 right-4 ${corFundo} text-white px-4 py-2 rounded-lg shadow-lg z-50 transform translate-x-full transition-transform`;
-    feedback.textContent = mensagem;
-
-    document.body.appendChild(feedback);
-
-    // Animar entrada
-    setTimeout(() => {
-        feedback.classList.remove('translate-x-full');
-    }, 100);
-
-    // Remover após 4 segundos (mais tempo para mensagens de erro)
-    const duracao = tipo === 'error' ? 4000 : 3000;
-    setTimeout(() => {
-        feedback.classList.add('translate-x-full');
-        setTimeout(() => {
-            if (document.body.contains(feedback)) {
-                document.body.removeChild(feedback);
-            }
-        }, 300);
-    }, duracao);
-}
-
-// Função para verificar horário periodicamente
-function iniciarVerificacaoHorario() {
-    // Verificar a cada minuto
-    setInterval(() => {
-        const statusAnterior = verificarHorarioFuncionamento();
-        carregarEstabelecimento();
-
-        // Se mudou o status, recarregar a página
-        const statusAtual = verificarHorarioFuncionamento();
-        if (statusAnterior.aberto !== statusAtual.aberto) {
-            location.reload();
-        }
-    }, 60000); // 60 segundos
-}
-
-// FUNÇÃO PARA MOSTRAR ERRO DE IMAGEM
-function mostrarErroImagem(imgElement) {
-    imgElement.style.display = 'none';
-    imgElement.parentElement.innerHTML = `
-                <div class="bg-gray-100 text-center p-4 rounded-lg h-48 md:h-48 flex flex-col justify-center">
-                    <div class="text-4xl mb-2">🍽️</div>
-                    <p class="text-gray-500 text-sm">Sem imagem</p>
+                <div class="flex-grow">
+                    <h5 class="font-bold text-gray-800">${item.nome}</h5>
+                    <p class="text-sm text-gray-500">${item.quantidade} x ${formatarPreco(item.preco)}</p>
+                </div>
+                <div class="text-lg font-bold text-green-600 flex-shrink-0">${formatarPreco(subtotal)}</div>
+                <div class="flex items-center gap-1 flex-shrink-0">
+                    <button onclick="diminuirQuantidade(${item.id})" class="text-red-500 hover:text-red-700 bg-white p-1 rounded-full border">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
+                    </button>
+                    <span class="font-bold text-sm text-gray-700 w-6 text-center">${item.quantidade}</span>
+                    <button onclick="adicionarAoCarrinho(${item.id}, '${item.nome}', ${item.preco})" class="text-green-500 hover:text-green-700 bg-white p-1 rounded-full border">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </button>
                 </div>
             `;
+        itensCarrinhoModal.appendChild(itemDiv);
+    });
+
+    // Atualizar resumo no modal de entrega (se estiver aberto)
+    const modalEntrega = document.getElementById('modalEntrega');
+    if (modalEntrega && !modalEntrega.classList.contains('hidden')) {
+        atualizarResumoPedido();
+    }
 }
 
+// Lógica de Modais
+function abrirModalCarrinho() {
+    const modal = document.getElementById('modalCarrinho');
+    renderizarCarrinho(); // Garante que o carrinho esteja atualizado ao abrir
+    modal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+}
 
+function fecharModalCarrinho() {
+    const modal = document.getElementById('modalCarrinho');
+    modal.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
+}
 
-// Funções do modal de entrega
 function abrirModalEntrega() {
     if (carrinho.length === 0) {
-        mostrarFeedback('Seu carrinho está vazio!', 'error');
+        mostrarFeedback('Adicione itens ao carrinho primeiro!', 'error');
         return;
     }
 
-    document.getElementById('modalEntrega').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-
-    // Atualizar resumo do pedido
-    atualizarResumoPedidoEntrega();
-
-    // Se for mesa, definir como retirada por padrão
-    if (numeroMesa) {
-        selecionarTipoPedido('retirada');
+    fecharModalCarrinho();
+    const modal = document.getElementById('modalEntrega');
+    modal.classList.remove('hidden');
+    document.body.classList.add('overflow-hidden');
+    
+    // Inicializar o tipo de pedido e pagamento
+    selecionarTipoPedido(tipoPedidoAtual);
+    if (formaPagamentoAtual) {
+        selecionarPagamento(formaPagamentoAtual);
     }
+
+    atualizarResumoPedido();
+    // Tenta preencher os campos se houver dados salvos
+    carregarDadosFormulario();
 }
 
 function fecharModalEntrega() {
-    document.getElementById('modalEntrega').classList.add('hidden');
-    document.body.style.overflow = 'auto';
+    const modal = document.getElementById('modalEntrega');
+    modal.classList.add('hidden');
+    document.body.classList.remove('overflow-hidden');
 }
 
+// Lógica de Formulário de Pedido
 function selecionarTipoPedido(tipo) {
     tipoPedidoAtual = tipo;
-
-    // Atualizar botões
     const btnEntrega = document.getElementById('btnEntrega');
     const btnRetirada = document.getElementById('btnRetirada');
     const enderecoSection = document.getElementById('enderecoSection');
+    const btnEnviarPedido = document.getElementById('btnEnviarPedido');
+
+    btnEntrega.classList.remove('border-blue-300', 'bg-blue-50');
+    btnEntrega.classList.add('border-transparent', 'bg-gray-100', 'hover:bg-gray-200');
+    btnRetirada.classList.remove('border-blue-300', 'bg-blue-50');
+    btnRetirada.classList.add('border-transparent', 'bg-gray-100', 'hover:bg-gray-200');
 
     if (tipo === 'entrega') {
-        btnEntrega.className = 'tipo-pedido-btn bg-blue-50 border-2 border-blue-300 p-3 rounded-lg text-center transition';
-        btnRetirada.className = 'tipo-pedido-btn bg-gray-100 border-2 border-transparent p-3 rounded-lg text-center transition hover:bg-gray-200';
+        btnEntrega.classList.add('border-blue-300', 'bg-blue-50');
+        btnEntrega.classList.remove('border-transparent', 'bg-gray-100', 'hover:bg-gray-200');
         enderecoSection.classList.remove('hidden');
+        btnEnviarPedido.textContent = '🚚 Confirmar Pedido (Entrega)';
     } else {
-        btnEntrega.className = 'tipo-pedido-btn bg-gray-100 border-2 border-transparent p-3 rounded-lg text-center transition hover:bg-gray-200';
-        btnRetirada.className = 'tipo-pedido-btn bg-blue-50 border-2 border-blue-300 p-3 rounded-lg text-center transition';
+        btnRetirada.classList.add('border-blue-300', 'bg-blue-50');
+        btnRetirada.classList.remove('border-transparent', 'bg-gray-100', 'hover:bg-gray-200');
         enderecoSection.classList.add('hidden');
+        btnEnviarPedido.textContent = '🏪 Confirmar Pedido (Retirada)';
     }
 }
 
 function selecionarPagamento(forma) {
     formaPagamentoAtual = forma;
+    const botoes = document.querySelectorAll('.pagamento-btn');
+    const dinheiroTroco = document.getElementById('dinheiroTroco');
 
-    // Atualizar botões
-    document.querySelectorAll('.pagamento-btn').forEach(btn => {
-        btn.className = 'pagamento-btn bg-gray-100 border-2 border-transparent p-3 rounded-lg text-center transition hover:bg-gray-50';
+    botoes.forEach(btn => {
+        btn.classList.remove('border-green-300', 'bg-green-50');
+        btn.classList.add('border-transparent', 'bg-gray-100', 'hover:bg-gray-50');
     });
 
-    // Destacar botão selecionado
-    const cores = {
-        'dinheiro': 'bg-green-50 border-green-300',
-        'cartao': 'bg-blue-50 border-blue-300',
-        'pix': 'bg-purple-50 border-purple-300'
-    };
+    const btnAtivo = Array.from(botoes).find(btn => btn.onclick.includes(`'${forma}'`));
+    if (btnAtivo) {
+        btnAtivo.classList.add('border-green-300', 'bg-green-50');
+    }
 
-    event.target.closest('.pagamento-btn').className = `pagamento-btn ${cores[forma]} border-2 p-3 rounded-lg text-center transition`;
-
-    // Mostrar/esconder campo de troco
-    const dinheiroTroco = document.getElementById('dinheiroTroco');
     if (forma === 'dinheiro') {
         dinheiroTroco.classList.remove('hidden');
     } else {
@@ -963,89 +776,46 @@ function selecionarPagamento(forma) {
     }
 }
 
-async function buscarCEP() {
-    const cep = document.getElementById('cepCliente').value.replace(/\D/g, '');
+function atualizarResumoPedido() {
+    const resumoModal = document.getElementById('resumoPedidoModal');
+    const totalResumoModal = document.getElementById('totalResumoModal');
+    const total = calcularTotalCarrinho();
+    const resumoItens = carrinho.map(item => `
+        <div class="flex justify-between">
+            <span class="font-semibold">${item.quantidade}x ${item.nome}</span>
+            <span>${formatarPreco(item.preco * item.quantidade)}</span>
+        </div>
+    `).join('');
 
-    if (cep.length !== 8) {
-        mostrarFeedback('CEP deve ter 8 dígitos!', 'error');
-        return;
-    }
+    resumoModal.innerHTML = `
+        ${resumoItens}
+        <div class="flex justify-between font-bold pt-2 mt-2 border-t border-gray-200">
+            <span>Subtotal:</span>
+            <span>${formatarPreco(total)}</span>
+        </div>
+        `;
 
-    try {
-        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-        const data = await response.json();
-
-        if (data.erro) {
-            mostrarFeedback('CEP não encontrado!', 'error');
-            return;
-        }
-
-        // Preencher campos
-        document.getElementById('ruaCliente').value = data.logradouro || '';
-        document.getElementById('bairroCliente').value = data.bairro || '';
-        document.getElementById('cidadeCliente').value = data.localidade || '';
-
-        mostrarFeedback('CEP encontrado!', 'success');
-
-        // Focar no campo número
-        document.getElementById('numeroCliente').focus();
-
-    } catch (error) {
-        console.error('Erro ao buscar CEP:', error);
-        mostrarFeedback('Erro ao buscar CEP. Tente novamente.', 'error');
-    }
+    // Atualiza o total final, incluindo taxas se houver
+    totalResumoModal.textContent = formatarPreco(total); 
 }
 
-function atualizarResumoPedidoEntrega() {
-    const resumo = document.getElementById('resumoPedidoEntrega');
-    const total = document.getElementById('totalPedidoEntrega');
-
-    let htmlResumo = '';
-    let totalPreco = 0;
-
-    carrinho.forEach(item => {
-        const subtotal = item.preco * item.quantidade;
-        totalPreco += subtotal;
-        htmlResumo += `
-                    <div class="flex justify-between">
-                        <span>${item.quantidade}x ${item.nome}</span>
-                        <span>${formatarPreco(subtotal)}</span>
-                    </div>
-                `;
-    });
-
-    resumo.innerHTML = htmlResumo;
-    total.textContent = formatarPreco(totalPreco);
-}
-
-function validarFormularioEntrega() {
+function validarFormulario() {
     const nome = document.getElementById('nomeCliente').value.trim();
     const telefone = document.getElementById('telefoneCliente').value.trim();
+    const formaPagamento = formaPagamentoAtual;
 
-    if (!nome) {
-        mostrarFeedback('Por favor, preencha seu nome!', 'error');
+    if (!nome || !telefone || !formaPagamento) {
+        mostrarFeedback('Por favor, preencha nome, telefone e selecione a forma de pagamento.', 'error');
         return false;
     }
 
-    if (!telefone) {
-        mostrarFeedback('Por favor, preencha seu telefone!', 'error');
-        return false;
-    }
-
-    if (!formaPagamentoAtual) {
-        mostrarFeedback('Por favor, selecione a forma de pagamento!', 'error');
-        return false;
-    }
-
-    // Validar endereço se for entrega
     if (tipoPedidoAtual === 'entrega') {
         const rua = document.getElementById('ruaCliente').value.trim();
         const numero = document.getElementById('numeroCliente').value.trim();
         const bairro = document.getElementById('bairroCliente').value.trim();
         const cidade = document.getElementById('cidadeCliente').value.trim();
-
         if (!rua || !numero || !bairro || !cidade) {
-            mostrarFeedback('Por favor, preencha todos os campos de endereço!', 'error');
+            mostrarFeedback('Para entrega, preencha o endereço completo (Rua, Nº, Bairro, Cidade).', 'error');
             return false;
         }
     }
@@ -1053,250 +823,244 @@ function validarFormularioEntrega() {
     return true;
 }
 
-function enviarPedidoEntrega() {
-    if (!validarFormularioEntrega()) {
-        return;
+// Salva dados no LocalStorage (opcional, para conveniência do usuário)
+function salvarDadosFormulario() {
+    const dados = {
+        nome: document.getElementById('nomeCliente').value,
+        telefone: document.getElementById('telefoneCliente').value,
+        cep: document.getElementById('cepCliente').value,
+        rua: document.getElementById('ruaCliente').value,
+        numero: document.getElementById('numeroCliente').value,
+        complemento: document.getElementById('complementoCliente').value,
+        bairro: document.getElementById('bairroCliente').value,
+        cidade: document.getElementById('cidadeCliente').value,
+        referencia: document.getElementById('referenciaCliente').value
+    };
+    localStorage.setItem('dadosCliente', JSON.stringify(dados));
+    localStorage.setItem('tipoPedido', tipoPedidoAtual);
+    localStorage.setItem('formaPagamento', formaPagamentoAtual);
+}
+
+function carregarDadosFormulario() {
+    const dadosString = localStorage.getItem('dadosCliente');
+    if (dadosString) {
+        const dados = JSON.parse(dadosString);
+        document.getElementById('nomeCliente').value = dados.nome || '';
+        document.getElementById('telefoneCliente').value = dados.telefone || '';
+        document.getElementById('cepCliente').value = dados.cep || '';
+        document.getElementById('ruaCliente').value = dados.rua || '';
+        document.getElementById('numeroCliente').value = dados.numero || '';
+        document.getElementById('complementoCliente').value = dados.complemento || '';
+        document.getElementById('bairroCliente').value = dados.bairro || '';
+        document.getElementById('cidadeCliente').value = dados.cidade || '';
+        document.getElementById('referenciaCliente').value = dados.referencia || '';
     }
 
-    // Verificar horário de funcionamento
-    const statusFuncionamento = verificarHorarioFuncionamento();
-    if (!statusFuncionamento.aberto) {
-        mostrarFeedback(`❌ Não é possível enviar pedidos. ${statusFuncionamento.motivo}`, 'error');
-        return;
-    }
+    const tipo = localStorage.getItem('tipoPedido');
+    if (tipo) selecionarTipoPedido(tipo);
 
-    // Coletar dados do formulário
+    const pagamento = localStorage.getItem('formaPagamento');
+    if (pagamento) selecionarPagamento(pagamento);
+}
+
+// Função para buscar CEP (simulação/exemplo)
+async function buscarCEP() {
+    const cep = document.getElementById('cepCliente').value.replace(/\D/g, '');
+    if (cep.length !== 8) return;
+
+    try {
+        mostrarFeedback('Buscando CEP...', 'info');
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+
+        if (data.erro) {
+            mostrarFeedback('CEP não encontrado.', 'error');
+            return;
+        }
+
+        document.getElementById('ruaCliente').value = data.logradouro || '';
+        document.getElementById('bairroCliente').value = data.bairro || '';
+        document.getElementById('cidadeCliente').value = `${data.localidade} / ${data.uf}` || '';
+        
+        mostrarFeedback('CEP preenchido com sucesso!', 'success');
+        document.getElementById('numeroCliente').focus();
+
+    } catch (error) {
+        console.error('Erro ao buscar CEP:', error);
+        mostrarFeedback('Erro ao buscar CEP. Preencha manualmente.', 'error');
+    }
+}
+
+
+function construirMensagemWhatsApp() {
     const nome = document.getElementById('nomeCliente').value.trim();
     const telefone = document.getElementById('telefoneCliente').value.trim();
     const observacoes = document.getElementById('observacoesCliente').value.trim();
+    const total = calcularTotalCarrinho();
+    const troco = formaPagamentoAtual === 'dinheiro' ? document.getElementById('trocoCliente').value.trim() : '';
+    const nomeEstab = estabelecimento.nome || 'Estabelecimento';
 
-    // Dados de endereço (se entrega)
-    let enderecoCompleto = '';
+    let mensagem = `*PEDIDO ONLINE* - ${nomeEstab}\n\n`;
+
+    // 1. Tipo de Pedido e Dados do Cliente
+    mensagem += `*Tipo:* ${tipoPedidoAtual === 'entrega' ? '🚚 Entrega' : '🏪 Retirada no Local'}\n`;
+    mensagem += `*Cliente:* ${nome}\n`;
+    mensagem += `*Telefone:* ${telefone}\n`;
+
+    // 2. Endereço (se for entrega)
     if (tipoPedidoAtual === 'entrega') {
         const rua = document.getElementById('ruaCliente').value.trim();
         const numero = document.getElementById('numeroCliente').value.trim();
+        const complemento = document.getElementById('complementoCliente').value.trim();
         const bairro = document.getElementById('bairroCliente').value.trim();
         const cidade = document.getElementById('cidadeCliente').value.trim();
-        const complemento = document.getElementById('complementoCliente').value.trim();
         const referencia = document.getElementById('referenciaCliente').value.trim();
-
-        enderecoCompleto = `${rua}, ${numero}${complemento ? ` - ${complemento}` : ''}\n${bairro} - ${cidade}`;
-        if (referencia) {
-            enderecoCompleto += `\nReferência: ${referencia}`;
-        }
+        
+        mensagem += `\n*Endereço:*\n`;
+        mensagem += `📍 ${rua}, Nº ${numero}${complemento ? `, ${complemento}` : ''}\n`;
+        mensagem += `*Bairro/Cidade:* ${bairro}, ${cidade}\n`;
+        if (referencia) mensagem += `*Ref:* ${referencia}\n`;
     }
 
-    // Dados de pagamento
-    let pagamentoTexto = '';
-    const formasPagamento = {
-        'dinheiro': '💵 Dinheiro',
-        'cartao': '💳 Cartão',
-        'pix': '📱 PIX'
-    };
-    pagamentoTexto = formasPagamento[formaPagamentoAtual];
-
-    if (formaPagamentoAtual === 'dinheiro') {
-        const troco = document.getElementById('trocoCliente').value.trim();
-        if (troco) {
-            pagamentoTexto += ` - Troco para ${troco}`;
-        }
-    }
-
-    // Montar mensagem do WhatsApp
-    const telefoneEstab = estabelecimento.telefone.replace(/\D/g, '');
-    let mensagem = '';
-
-    // Cabeçalho
-    if (tipoPedidoAtual === 'entrega') {
-        mensagem = `🚚 *PEDIDO PARA ENTREGA*\n\n`;
-        if (numeroMesa) {
-            mensagem += `🪑 Mesa ${numeroMesa} solicitou entrega\n\n`;
-        }
-    } else {
-        mensagem = `🏪 *PEDIDO PARA RETIRADA*\n\n`;
-        if (numeroMesa) {
-            mensagem += `🪑 Mesa ${numeroMesa}\n\n`;
-        }
-    }
-
-    // Dados do cliente
-    mensagem += `👤 *Cliente:* ${nome}\n`;
-    mensagem += `📱 *Telefone:* ${telefone}\n\n`;
-
-    // Endereço (se entrega)
-    if (tipoPedidoAtual === 'entrega') {
-        mensagem += `📍 *Endereço de entrega:*\n${enderecoCompleto}\n\n`;
-    }
-
-    // Itens do pedido
-    mensagem += `🛒 *ITENS DO PEDIDO:*\n\n`;
-    let total = 0;
+    // 3. Itens do Pedido
+    mensagem += `\n*ITENS DO PEDIDO*:\n`;
     carrinho.forEach(item => {
-        const subtotal = item.preco * item.quantidade;
-        total += subtotal;
-        mensagem += `• ${item.nome}\n`;
-        mensagem += `  Qtd: ${item.quantidade} × ${formatarPreco(item.preco)} = ${formatarPreco(subtotal)}\n\n`;
+        mensagem += `${item.quantidade}x ${item.nome} (${formatarPreco(item.preco * item.quantidade)})\n`;
     });
+    
+    // 4. Totais
+    mensagem += `\n*SUBTOTAL: ${formatarPreco(total)}*\n`;
+    
+    // 5. Pagamento
+    mensagem += `*Pagamento:* ${formaPagamentoAtual.toUpperCase()}\n`;
+    if (troco) mensagem += `*Precisa de troco para:* ${troco}\n`;
 
-    mensagem += `💰 *TOTAL: ${formatarPreco(total)}*\n\n`;
-
-    // Forma de pagamento
-    mensagem += `💳 *Pagamento:* ${pagamentoTexto}\n\n`;
-
-    // Observações
+    // 6. Observações
     if (observacoes) {
-        mensagem += `📝 *Observações:* ${observacoes}\n\n`;
+        mensagem += `\n*Observações:*\n${observacoes}\n`;
     }
 
-    mensagem += `Obrigado!`;
+    mensagem += '\nObrigado pelo seu pedido! 😉';
 
-    // Enviar para WhatsApp
-    const url = `https://wa.me/55${telefoneEstab}?text=${encodeURIComponent(mensagem)}`;
-    window.open(url, '_blank');
-
-    // Fechar modais e limpar carrinho
-    fecharModalEntrega();
-    fecharModalCarrinho();
-    limparCarrinho();
-    mostrarFeedback('Pedido enviado com sucesso!', 'success');
+    return encodeURIComponent(mensagem);
 }
 
-// Máscara para CEP
-document.addEventListener('DOMContentLoaded', function () {
-    const cepInput = document.getElementById('cepCliente');
-    if (cepInput) {
-        cepInput.addEventListener('input', function (e) {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.length > 5) {
-                value = value.replace(/(\d{5})(\d{1,3})/, '$1-$2');
-            }
-            e.target.value = value;
-        });
-    }
-});
-
-// Tornar funções acessíveis globalmente
-window.adicionarAoCarrinho = adicionarAoCarrinho;
-window.adicionarAoCarrinhoComVerificacao = adicionarAoCarrinhoComVerificacao;
-window.removerDoCarrinho = removerDoCarrinho;
-window.alterarQuantidade = alterarQuantidade;
-window.limparCarrinho = limparCarrinho;
-window.enviarPedidoCompleto = enviarPedidoCompleto;
-window.mostrarErroImagem = mostrarErroImagem;
-window.abrirModalCarrinho = abrirModalCarrinho;
-window.fecharModalCarrinho = fecharModalCarrinho;
-window.abrirModalEntrega = abrirModalEntrega;
-window.fecharModalEntrega = fecharModalEntrega;
-window.selecionarTipoPedido = selecionarTipoPedido;
-window.selecionarPagamento = selecionarPagamento;
-window.buscarCEP = buscarCEP;
-window.enviarPedidoEntrega = enviarPedidoEntrega;
-window.enviarPedidoSimples = enviarPedidoSimples;
-
-// Função para controlar header compacto no mobile
-function iniciarControleMobileHeader() {
-    let ultimaPosicao = 0;
-    let headerCompactoVisivel = false;
-
-    const headerPrincipal = document.getElementById('headerPrincipal');
-    const headerCompacto = document.getElementById('headerCompacto');
-    const categoriasNavContainer = document.getElementById('categoriasNavContainer');
-
-    function atualizarHeaderMobile() {
-        const posicaoAtual = window.pageYOffset || document.documentElement.scrollTop;
-        const alturaHeader = headerPrincipal.offsetHeight;
-
-        // Verificar se é mobile (largura menor que 768px)
-        const isMobile = window.innerWidth < 768;
-
-        if (isMobile) {
-            // Mostrar header compacto quando rolar para baixo e passar do header principal
-            if (posicaoAtual > alturaHeader && !headerCompactoVisivel) {
-                headerCompacto.classList.add('visivel');
-                headerCompactoVisivel = true;
-
-                // Ajustar posição das categorias para compensar header fixo
-                categoriasNavContainer.style.top = '60px'; // Altura do header compacto
-            }
-            // Esconder header compacto quando voltar ao topo
-            else if (posicaoAtual <= alturaHeader && headerCompactoVisivel) {
-                headerCompacto.classList.remove('visivel');
-                headerCompactoVisivel = false;
-
-                // Resetar posição das categorias
-                categoriasNavContainer.style.top = '0';
-            }
-        } else {
-            // No desktop, sempre esconder header compacto
-            if (headerCompactoVisivel) {
-                headerCompacto.classList.remove('visivel');
-                headerCompactoVisivel = false;
-                categoriasNavContainer.style.top = '0';
-            }
-        }
-
-        ultimaPosicao = posicaoAtual;
+function enviarPedidoEntrega() {
+    if (!validarFormulario()) {
+        return;
     }
 
-    // Escutar eventos de scroll com throttle para performance
-    let ticking = false;
-    window.addEventListener('scroll', () => {
-        if (!ticking) {
-            requestAnimationFrame(() => {
-                atualizarHeaderMobile();
-                ticking = false;
-            });
-            ticking = true;
+    // Salva dados para o próximo pedido
+    salvarDadosFormulario();
+
+    const numeroTelefoneEstabelecimento = estabelecimento.telefone.replace(/\D/g, ''); // Limpa o número
+    const mensagem = construirMensagemWhatsApp();
+    
+    const url = `https://api.whatsapp.com/send?phone=${numeroTelefoneEstabelecimento}&text=${mensagem}`;
+
+    // Abrir o WhatsApp
+    window.open(url, '_blank');
+    
+    // Mostrar feedback e fechar modal
+    mostrarFeedback('Pedido enviado! Verifique o WhatsApp.', 'success');
+    fecharModalEntrega();
+    limparCarrinho();
+}
+
+
+// Funções de feedback e utilitárias
+function mostrarFeedback(mensagem, tipo) {
+    // Cria um elemento de notificação flutuante temporário
+    const notificacao = document.createElement('div');
+    notificacao.className = `fixed bottom-20 left-1/2 transform -translate-x-1/2 p-3 rounded-lg shadow-xl text-white font-semibold transition-all duration-300 z-50`;
+    
+    if (tipo === 'success') {
+        notificacao.classList.add('bg-green-500');
+    } else if (tipo === 'error') {
+        notificacao.classList.add('bg-red-500');
+    } else { // info
+        notificacao.classList.add('bg-blue-500');
+    }
+    
+    notificacao.textContent = mensagem;
+
+    document.body.appendChild(notificacao);
+
+    // Fade out e remover
+    setTimeout(() => {
+        notificacao.style.opacity = '0';
+        notificacao.style.transform = 'translate(-50%, 20px)';
+        setTimeout(() => {
+            notificacao.remove();
+        }, 500);
+    }, 2500);
+}
+
+function mostrarAvisoFechado(motivo) {
+    mostrarFeedback(`🔴 ${motivo}. Pedidos estão desabilitados no momento.`, 'error');
+    desabilitarBotoesAdicionar();
+    // Esconder carrinho flutuante
+    document.getElementById('carrinhoFlutuante').classList.add('hidden');
+    // Desabilitar botão de pedido no modal
+    const btnEnviar = document.getElementById('btnEnviarPedido');
+    if (btnEnviar) btnEnviar.disabled = true;
+}
+
+function desabilitarBotoesAdicionar() {
+    const botoes = document.querySelectorAll('.btn-pedido');
+    botoes.forEach(btn => {
+        btn.disabled = true;
+        btn.classList.add('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+        btn.classList.remove('bg-purple-500', 'hover:bg-purple-600', 'text-white');
+    });
+}
+
+function habilitarBotoesAdicionar() {
+    const botoes = document.querySelectorAll('.btn-pedido');
+    botoes.forEach(btn => {
+        // Verifica se o item original está disponível na planilha (a opacidade verifica isso)
+        if (!btn.closest('.item-card').classList.contains('opacity-60')) {
+            btn.disabled = false;
+            btn.classList.remove('bg-gray-300', 'text-gray-500', 'cursor-not-allowed');
+            btn.classList.add('bg-purple-500', 'hover:bg-purple-600', 'text-white');
         }
     });
-
-    // Escutar mudanças de tamanho da tela
-    window.addEventListener('resize', atualizarHeaderMobile);
+    // Habilita botão de pedido no modal
+    const btnEnviar = document.getElementById('btnEnviarPedido');
+    if (btnEnviar) btnEnviar.disabled = false;
 }
 
-// Função para forçar esconder barra de endereço no mobile
-function esconderBarraEndereco() {
-    // Forçar scroll mínimo para esconder barra de endereço
-    if (window.innerWidth <= 768) {
-        setTimeout(() => {
-            window.scrollTo(0, 1);
-            setTimeout(() => {
-                window.scrollTo(0, 0);
-            }, 1);
-        }, 100);
+// Lógica para esconder/mostrar header compacto (mobile)
+window.onscroll = function () {
+    const headerCompacto = document.getElementById('headerCompacto');
+    const headerPrincipal = document.getElementById('headerPrincipal');
+
+    if (!headerPrincipal || !headerCompacto) return;
+
+    if (window.scrollY > headerPrincipal.offsetHeight) {
+        headerCompacto.classList.add('visivel');
+    } else {
+        headerCompacto.classList.remove('visivel');
     }
-}
+};
 
-// Função para obter número da mesa da URL
+// Lógica para QR Code (simulação)
 function obterNumeroMesa() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const mesa = urlParams.get('mesa');
+    const params = new URLSearchParams(window.location.search);
+    const mesa = params.get('mesa');
+    if (mesa) {
+        numeroMesa = mesa;
+        tipoPedidoAtual = 'mesa';
+        document.getElementById('btnEntrega').style.display = 'none';
+        document.getElementById('btnRetirada').style.display = 'none';
+        document.getElementById('enderecoSection').style.display = 'none';
+        document.getElementById('btnEnviarPedido').textContent = '✅ Finalizar Pedido na Mesa';
 
-    if (mesa && !isNaN(mesa) && parseInt(mesa) > 0) {
-        numeroMesa = parseInt(mesa);
-        return numeroMesa;
+        // Oculta o carrinho flutuante e mostra apenas o botão de pedido no modal se for para mesa
+        document.getElementById('carrinhoFlutuante').classList.add('hidden');
     }
-
-    // Verificar se tem mesa no final da URL (formato: /mesa/5)
-    const pathname = window.location.pathname;
-    const mesaMatch = pathname.match(/\/mesa\/(\d+)$/);
-    if (mesaMatch) {
-        numeroMesa = parseInt(mesaMatch[1]);
-        return numeroMesa;
-    }
-
-    // Verificar se tem mesa no hash (formato: #mesa5)
-    const hash = window.location.hash;
-    const hashMatch = hash.match(/#mesa(\d+)$/);
-    if (hashMatch) {
-        numeroMesa = parseInt(hashMatch[1]);
-        return numeroMesa;
-    }
-
-    return null;
 }
 
-// Função para mostrar informação da mesa no header
 function mostrarInfoMesa() {
     if (!numeroMesa) return;
 
@@ -1331,11 +1095,5 @@ setTimeout(() => {
     mostrarInfoMesa();
 }, 500);
 
-// Iniciar verificação de horário
-iniciarVerificacaoHorario();
-
-// Iniciar controle do header mobile
-iniciarControleMobileHeader();
-
-// Esconder barra de endereço quando carregado
-window.addEventListener('load', esconderBarraEndereco);
+// Iniciar verificação de status a cada 60 segundos (opcional, para horário)
+setInterval(carregarEstabelecimento, 60000);
